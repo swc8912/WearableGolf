@@ -190,11 +190,25 @@ public class DataMapActivity extends ActionBarActivity implements
             DataMapActivity activity = mActivity.get();
 
             switch (msg.what) {
-                case WEAR_DATA:
+                case SensoringActivity.WEAR_DATA:
                     SensorData data = (SensorData) msg.obj;
 
                     if(activity != null){
-                        String text = activity.textView.getText().toString() + "\n" + data.getSensorType() + " " + data.getArg1() + " " + data.getArg2() + " " + data.getArg3();
+                        String type = data.getSensorType();
+                        double f1 = data.getArg1();
+                        double f2 = data.getArg2();
+                        double f3 = data.getArg3();
+
+                        String text = "";
+                        if(type.equals("accel")){
+                            double sumOfSquares = (f1 * f1) + (f2 * f2) + (f3 * f3);
+                            double acceleration = Math.sqrt(sumOfSquares);
+                            text = activity.textView.getText().toString() + "\n" + "accel: " + acceleration;
+                        }
+                        else if(!type.equals("gyro") && !type.equals("magnetic")){
+                            text = activity.textView.getText().toString() + "\n" + data.getSensorType() + " " + data.getArg1() + " " + data.getArg2() + " " + data.getArg3();
+                        }
+
                         activity.textView.setText(text.toString());
                     }
 

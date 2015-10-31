@@ -2,6 +2,7 @@ package com.kingofgolf.golfapp;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.drawable.AnimationDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -11,6 +12,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.view.WatchViewStub;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -45,8 +47,11 @@ public class DataMapActivity extends Activity implements
     public static final int STATE_SWING_SECOND_START = 7;
 
     private int STATE = STATE_SWING_NOT_START;
+    private String WEARABLE_DATA_PATH = "/data_from_watch";
 
     private RelativeLayout layout;
+
+    public static boolean isPaired = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,22 +95,21 @@ public class DataMapActivity extends Activity implements
 
         //startSensoring();
 
-//        String WEARABLE_DATA_PATH = "/data_from_watch";
-//
-//        // Create a DataMap object and send it to the data layer
-//        DataMap dataMap = new DataMap();
-//        dataMap.putString("sensortype", "accel");
-//        dataMap.putDouble("x", 123.123);
-//        dataMap.putDouble("y", 456.456);
-//        dataMap.putDouble("z", 789.789);
-//        //Requires a new thread to avoid blocking the UI
-//        new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
+        SetAndSendData("watchconnected", 0, 0, 0);
 
-        // 영상 촬영용 세팅
-        //Message msg = new Message();
-        //msg.what = APP_DATA;
-        //msg.obj = new SensorData("start", 0, 0, 0);
-        //msgHandler.sendMessage(msg);
+//        int cnt = 0;
+//
+//        while(!isPaired && cnt < 100) {
+//            SetAndSendData("watchconnected", 0, 0, 0);
+//            new Handler().postDelayed(new Runnable() {
+//                @Override
+//                public void run() {
+//
+//                }
+//            }, 500);
+//            cnt++;
+//        }
+
     }
 
     // Disconnect from the data layer when the Activity stops
@@ -177,12 +181,15 @@ public class DataMapActivity extends Activity implements
                     SensorData data = (SensorData) msg.obj;
 
                     if(activity != null){
-                        if(data.getSensorType() == null)
+                        if(data.getSensorType() == null){
+                            Log.d("myApp", "data sensor null");
                             return;
+                        }
 
                         if(data.getSensorType().equals("start")){
                             activity.STATE = activity.STATE_SWING_READY;
                             activity.mTextView.setText("SWING READY");
+                            activity.SetAndSendData("swing ready", 0, 0, 0);
                             activity.startSensoring();
 
                             activity.layout.setBackgroundResource(R.drawable.watchface1);
@@ -195,7 +202,6 @@ public class DataMapActivity extends Activity implements
                             activity.layout.setBackgroundResource(R.drawable.watchface2);
                         }
                     }
-
                     break;
                 default:
                     break;
@@ -203,8 +209,18 @@ public class DataMapActivity extends Activity implements
         }
     };
 
+    public void SetAndSendData(String type, double f1, double f2, double f3){
+        DataMap dataMap = new DataMap();
+        dataMap.putString("sensortype", type);
+        dataMap.putDouble("x", f1);
+        dataMap.putDouble("y", f2);
+        dataMap.putDouble("z", f3);
+        //Requires a new thread to avoid blocking the UI
+        new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
+    }
+
     private void startSensoring(){
-        int delay = SensorManager.SENSOR_DELAY_UI;
+        int delay = SensorManager.SENSOR_DELAY_GAME;
 
 //        mSm.registerListener(mSensorListener,
 //                mSm.getDefaultSensor(Sensor.TYPE_LIGHT), delay);
@@ -242,7 +258,6 @@ public class DataMapActivity extends Activity implements
 
     private SensorEventListener mSensorListener = new SensorEventListener() {
         private int cnt = 0;
-        private String WEARABLE_DATA_PATH = "/data_from_watch";
         private DataMap dataMap = null;
         private float[] gravity = new float[3];
         private static final float ALPHA = 0.8f;
@@ -284,7 +299,7 @@ public class DataMapActivity extends Activity implements
                     double acceleration = Math.sqrt(sumOfSquares);
                     Log.d("myTag", "acceleration; " + acceleration);
 
-                    if(STATE == STATE_SWING_READY && acceleration >= THRESHHOLD){
+                    if((STATE == STATE_SWING_READY || STATE == STATE_SWING_END) && acceleration >= THRESHHOLD){
                         STATE = STATE_SWING_START;
                         mTextView.setText("SWING START");
                         SetAndSendData("swing start", 0, 0, 0);
@@ -297,7 +312,7 @@ public class DataMapActivity extends Activity implements
                     else if(STATE == STATE_SWING_UP && acceleration > THRESHHOLD){
                         STATE = STATE_SWING_SECOND_START;
                         mTextView.setText("SWING SECOND START");
-                        SetAndSendData("swing seconde start", 0, 0, 0);
+                        SetAndSendData("swing second start", 0, 0, 0);
                     }
                     else if(STATE == STATE_SWING_SECOND_START && acceleration <= THRESHHOLD){
                         STATE = STATE_SWING_END;
@@ -315,25 +330,15 @@ public class DataMapActivity extends Activity implements
                     break;
                 case Sensor.TYPE_MAGNETIC_FIELD:
                     if(STATE == STATE_SWING_START) {
-                        SetAndSendData("magnetic", v[0], v[1], v[2]);
+                        //SetAndSendData("magnetic", v[0], v[1], v[2]);
                     }
                     break;
                 case Sensor.TYPE_GYROSCOPE:
                     if(STATE == STATE_SWING_START){
-                        SetAndSendData("gyro", v[0], v[1], v[2]);
+                        //SetAndSendData("gyro", v[0], v[1], v[2]);
                     }
                     break;
             }
-        }
-
-        private void SetAndSendData(String type, double f1, double f2, double f3){
-            dataMap = new DataMap();
-            dataMap.putString("sensortype", type);
-            dataMap.putDouble("x", f1);
-            dataMap.putDouble("y", f2);
-            dataMap.putDouble("z", f3);
-            //Requires a new thread to avoid blocking the UI
-            new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
         }
 
         private float[] highPass(float x, float y, float z)

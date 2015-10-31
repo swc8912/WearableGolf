@@ -19,31 +19,31 @@
 
         <ImageButton
             android:id="@+id/btnSwing1"
-            android:layout_width="140dp"
-            android:layout_height="140dp"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
             android:layout_margin="10dp"
             android:background="@drawable/swing1" />
 
         <ImageButton
             android:id="@+id/btnSwing2"
-            android:layout_width="140dp"
-            android:layout_height="140dp"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
             android:layout_margin="10dp"
             android:layout_toRightOf="@id/btnSwing1"
             android:background="@drawable/swing2" />
 
         <ImageButton
             android:id="@+id/btnSwing3"
-            android:layout_width="140dp"
-            android:layout_height="140dp"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
             android:layout_below="@id/btnSwing1"
             android:layout_margin="10dp"
             android:background="@drawable/swing3" />
 
         <ImageButton
             android:id="@+id/btnSwing4"
-            android:layout_width="140dp"
-            android:layout_height="140dp"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
             android:layout_below="@id/btnSwing2"
             android:layout_margin="10dp"
             android:layout_toRightOf="@id/btnSwing3"
@@ -51,16 +51,16 @@
 
         <ImageButton
             android:id="@+id/btnSwing5"
-            android:layout_width="140dp"
-            android:layout_height="140dp"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
             android:layout_below="@id/btnSwing3"
             android:layout_margin="10dp"
             android:background="@drawable/swing5" />
 
         <ImageButton
             android:id="@+id/btnSwing6"
-            android:layout_width="140dp"
-            android:layout_height="140dp"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
             android:layout_below="@id/btnSwing4"
             android:layout_margin="10dp"
             android:layout_toRightOf="@id/btnSwing5"
@@ -76,6 +76,6 @@
         android:layout_marginBottom="8dp"
         android:background="@drawable/swing_18"
         android:layout_weight="1"
-        android:visibility="gone" />
+        android:visibility="visible" />
 
 </LinearLayout>

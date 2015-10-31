@@ -27,7 +27,9 @@ public class ListenerService extends WearableListenerService {
             // Check the data type
             if (event.getType() == DataEvent.TYPE_CHANGED) {
                 // Check the data path
+                Log.d("myTag", "changed");
                 String path = event.getDataItem().getUri().getPath();
+                Log.d("myTag", "path; " + path);
                 if (path.equals(WEARABLE_APP_PATH)) {
 //                    dataMap = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
 //                    Log.v("myTag", "DataMap send from app: " + dataMap);
@@ -37,11 +39,14 @@ public class ListenerService extends WearableListenerService {
                     Log.v("myTag", "DataMap received from watch: " + dataMap);
 //                    Toast.makeText(getApplicationContext(), dataMap.getString("sensortype"), Toast.LENGTH_SHORT).show();
 
-                    SensorData data = new SensorData(dataMap.getString("sensortype"), dataMap.getDouble("x"), dataMap.getDouble("y"), dataMap.getDouble("z"));
+                    String type = dataMap.getString("sensortype");
+
+                    SensorData data = new SensorData(type, dataMap.getDouble("x"), dataMap.getDouble("y"), dataMap.getDouble("z"));
                     Message msg = new Message();
-                    msg.what = DataMapActivity.WEAR_DATA;
+                    //msg.what = DataMapActivity.WEAR_DATA;
+                    msg.what = SensoringActivity.WEAR_DATA;
                     msg.obj = data;
-                    DataMapActivity.msgHandler.sendMessage(msg);
+                    SensoringActivity.msgHandler.sendMessage(msg);
                 }
             }
         }
