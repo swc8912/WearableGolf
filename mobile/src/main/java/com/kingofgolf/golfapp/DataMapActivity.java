@@ -1,11 +1,16 @@
 package com.kingofgolf.golfapp;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -16,8 +21,9 @@ import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
+import com.kingofgolf.golfapp.data.SensorData;
 
-import java.util.Date;
+import java.lang.ref.WeakReference;
 
 
 public class DataMapActivity extends ActionBarActivity implements
@@ -26,6 +32,12 @@ public class DataMapActivity extends ActionBarActivity implements
 
     GoogleApiClient googleClient;
     private TextView textView;
+    private Button btnStart;
+    private Button btnOpen;
+    public static GetMassgeHandler msgHandler;
+    private final String WEARABLE_DATA_PATH = "/data_from_app";
+    public static boolean isConnected = false;
+    public static final int WEAR_DATA = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,8 +51,46 @@ public class DataMapActivity extends ActionBarActivity implements
                 .addOnConnectionFailedListener(this)
                 .build();
 
+        msgHandler = new GetMassgeHandler(this);
+
         textView = (TextView)findViewById(R.id.textView);
 
+        btnStart = (Button)findViewById(R.id.btnStart);
+        btnStart.setTag("stop");
+        btnStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (v.getTag().equals("stop") && isConnected) {
+                    btnStart.setTag("start");
+                    btnStart.setText("STOP");
+                    textView.setText("");
+                    // Create a DataMap object and send it to the data layer
+                    DataMap dataMap = new DataMap();
+                    dataMap.putString("sensortype", "start");
+                    //Requires a new thread to avoid blocking the UI
+                    new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
+                } else if (v.getTag().equals("start") && isConnected) {
+                    btnStart.setTag("stop");
+                    btnStart.setText("START");
+
+                    DataMap dataMap = new DataMap();
+                    dataMap.putString("sensortype", "stop");
+                    //Requires a new thread to avoid blocking the UI
+                    new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
+                }
+            }
+        });
+
+        btnOpen = (Button)findViewById(R.id.btnOpen);
+        btnOpen.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                DataMap dataMap = new DataMap();
+                dataMap.putString("sensortype", "open");
+                //Requires a new thread to avoid blocking the UI
+                new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
+            }
+        });
     }
 
     // Connect to the data layer when the Activity starts
@@ -53,18 +103,9 @@ public class DataMapActivity extends ActionBarActivity implements
     @Override
     public void onConnected(Bundle connectionHint) {
         Log.v("myApp", "OnConnected entered");
+        isConnected = true;
 
-        String WEARABLE_DATA_PATH = "/data_from_app";
-
-        // Create a DataMap object and send it to the data layer
-        DataMap dataMap = new DataMap();
-        dataMap.putLong("time", new Date().getTime());
-        dataMap.putString("hole", "1");
-        dataMap.putString("front", "250");
-        dataMap.putString("middle", "260");
-        dataMap.putString("back", "270");
-        //Requires a new thread to avoid blocking the UI
-        new SendToDataLayerThread(WEARABLE_DATA_PATH, dataMap).start();
+        Toast.makeText(DataMapActivity.this, "Connected!", Toast.LENGTH_SHORT).show();
     }
 
     // Disconnect from the data layer when the Activity stops
@@ -72,6 +113,7 @@ public class DataMapActivity extends ActionBarActivity implements
     protected void onStop() {
         if (null != googleClient && googleClient.isConnected()) {
             googleClient.disconnect();
+            isConnected = false;
         }
         super.onStop();
     }
@@ -125,7 +167,7 @@ public class DataMapActivity extends ActionBarActivity implements
                 PutDataRequest request = putDMR.asPutDataRequest();
                 DataApi.DataItemResult result = Wearable.DataApi.putDataItem(googleClient,request).await();
                 if (result.getStatus().isSuccess()) {
-                    Log.v("myTag", "DataMap: " + dataMap + " sent to: " + node.getDisplayName());
+                    Log.v("myTag", "success DataMap: " + dataMap + " sent to: " + node.getDisplayName());
                 } else {
                     // Log an error
                     Log.v("myTag", "ERROR: failed to send DataMap");
@@ -134,7 +176,32 @@ public class DataMapActivity extends ActionBarActivity implements
         }
     }
 
-    public void changeText(String text){
-        textView.setText(text);
-    }
+    public static class GetMassgeHandler extends Handler {
+        private final WeakReference<DataMapActivity> mActivity;
+
+        public GetMassgeHandler(DataMapActivity activity) {
+            mActivity = new WeakReference<DataMapActivity>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+
+            DataMapActivity activity = mActivity.get();
+
+            switch (msg.what) {
+                case WEAR_DATA:
+                    SensorData data = (SensorData) msg.obj;
+
+                    if(activity != null){
+                        String text = activity.textView.getText().toString() + "\n" + data.getSensorType() + " " + data.getArg1() + " " + data.getArg2() + " " + data.getArg3();
+                        activity.textView.setText(text.toString());
+                    }
+
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
 }

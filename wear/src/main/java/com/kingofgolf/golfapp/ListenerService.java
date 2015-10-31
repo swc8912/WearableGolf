@@ -1,5 +1,7 @@
 package com.kingofgolf.golfapp;
 
+import android.content.Intent;
+import android.os.Message;
 import android.util.Log;
 
 import com.google.android.gms.wearable.DataEvent;
@@ -29,6 +31,21 @@ public class ListenerService extends WearableListenerService {
                 if (path.equals(WEARABLE_APP_PATH)) {
                     dataMap = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
                     Log.v("myTag", "DataMap received from app: " + dataMap);
+
+                    String cmd = dataMap.getString("sensortype");
+
+                    if(cmd.equals("open")){
+                        Intent intent = new Intent(getApplicationContext(), DataMapActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                        return;
+                    }
+
+                    SensorData data = new SensorData(dataMap.getString("sensortype"), dataMap.getDouble("x"), dataMap.getDouble("y"), dataMap.getDouble("z"));
+                    Message msg = new Message();
+                    msg.what = DataMapActivity.APP_DATA;
+                    msg.obj = data;
+                    DataMapActivity.msgHandler.sendMessage(msg);
                 }
                 else if(path.equals(WEARABLE_WATCH_PATH)){
                     //dataMap = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
