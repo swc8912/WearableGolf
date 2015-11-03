@@ -27,6 +27,7 @@ import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
 
 import java.lang.ref.WeakReference;
+import java.util.List;
 
 public class DataMapActivity extends Activity implements
         GoogleApiClient.ConnectionCallbacks,
@@ -66,6 +67,7 @@ public class DataMapActivity extends Activity implements
                 .build();
 
         mSm = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+//        showSensorList();
 
         msgHandler = new GetMassgeHandler(this);
 
@@ -80,6 +82,21 @@ public class DataMapActivity extends Activity implements
         });
 
         stub.setKeepScreenOn(true);
+    }
+
+    public void showSensorList() {
+        String strMsg = "Sensor Type";
+        // 센서 목록 배열을 구한다
+        List<Sensor> listSensor = mSm.getSensorList(Sensor.TYPE_ALL);
+
+        for( int i=0; i < listSensor.size(); i++ ) {
+            // 배열에서 센서 객체를 하나씩 구한다
+            Sensor sensor = listSensor.get(i);
+
+            // 센서의 종류를 구한다
+            strMsg += " - " + sensor.getName();
+        }
+        Log.d("myApp", strMsg);
     }
 
     // Connect to the data layer when the Activity starts
@@ -262,6 +279,7 @@ public class DataMapActivity extends Activity implements
         private float[] gravity = new float[3];
         private static final float ALPHA = 0.8f;
         private static final int THRESHHOLD = 11;
+        private long baseTime = 0;
 
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
             // 특별히 처리할 필요없음
@@ -299,10 +317,13 @@ public class DataMapActivity extends Activity implements
                     double acceleration = Math.sqrt(sumOfSquares);
                     Log.d("myTag", "acceleration; " + acceleration);
 
+                    long currentTime = System.currentTimeMillis ();
+
                     if((STATE == STATE_SWING_READY || STATE == STATE_SWING_END) && acceleration >= THRESHHOLD){
                         STATE = STATE_SWING_START;
                         mTextView.setText("SWING START");
                         SetAndSendData("swing start", 0, 0, 0);
+                        baseTime = System.currentTimeMillis ();
                     }
                     else if(STATE == STATE_SWING_START && acceleration < THRESHHOLD){
                         STATE = STATE_SWING_UP;
@@ -314,19 +335,17 @@ public class DataMapActivity extends Activity implements
                         mTextView.setText("SWING SECOND START");
                         SetAndSendData("swing second start", 0, 0, 0);
                     }
-                    else if(STATE == STATE_SWING_SECOND_START && acceleration <= THRESHHOLD){
+                    else if(STATE == STATE_SWING_SECOND_START && acceleration <= THRESHHOLD && currentTime - baseTime >= 2000){
                         STATE = STATE_SWING_END;
                         mTextView.setText("SWING END");
                         SetAndSendData("swing stop", 0, 0, 0);
                         stopSensoring();
-
+                        baseTime = 0;
                         layout.setBackgroundResource(R.drawable.watchface2);
                         return;
                     }
 
-                    if(STATE == STATE_SWING_START) {
-                        SetAndSendData("accel", v[0], v[1], v[2]);
-                    }
+                    SetAndSendData("accel", v[0], v[1], v[2]);
                     break;
                 case Sensor.TYPE_MAGNETIC_FIELD:
                     if(STATE == STATE_SWING_START) {
@@ -335,7 +354,7 @@ public class DataMapActivity extends Activity implements
                     break;
                 case Sensor.TYPE_GYROSCOPE:
                     if(STATE == STATE_SWING_START){
-                        //SetAndSendData("gyro", v[0], v[1], v[2]);
+                        SetAndSendData("gyro", v[0], v[1], v[2]);
                     }
                     break;
             }

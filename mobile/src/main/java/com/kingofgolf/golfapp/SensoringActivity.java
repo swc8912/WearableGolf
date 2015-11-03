@@ -234,6 +234,11 @@ public class SensoringActivity extends Activity implements
         new SendToDataLayerThread2(WEARABLE_DATA_PATH, dataMap).start();
     }
 
+    private int accelCnt = 0;
+    private int gyroCnt = 0;
+    private double accelSum = 0;
+    private double gyroSum = 0;
+
     public static class GetMassgeHandler extends Handler {
         private final WeakReference<SensoringActivity> mActivity;
 
@@ -260,9 +265,14 @@ public class SensoringActivity extends Activity implements
 
                         String text = "";
                         if (type.equals("accel")) {
-                            double sumOfSquares = (f1 * f1) + (f2 * f2) + (f3 * f3);
-                            double acceleration = Math.sqrt(sumOfSquares);
+                            activity.accelCnt++;
+                            activity.accelSum += Math.sqrt((f1 * f1) + (f2 * f2) + (f3 * f3));
+                            //double sumOfSquares = (f1 * f1) + (f2 * f2) + (f3 * f3);
+                            //double acceleration = Math.sqrt(sumOfSquares);
 //                            text = activity.textView.getText().toString() + "\n" + "accel: " + acceleration;
+                        } else if(type.equals("gyro")){
+                            activity.gyroCnt++;
+                            activity.gyroSum += (f1 * f1) + (f2 * f2) + (f3 * f3);
                         } else if(type.equals("watchconnected")){
                             SensoringActivity.isPaired = true;
                             Log.d("myApp", "watchconnected");
@@ -270,6 +280,15 @@ public class SensoringActivity extends Activity implements
                         } else if (type.equals("swing stop")) {
                             Toast.makeText(activity, "Swing Ended!", Toast.LENGTH_SHORT).show();
                             // 데이터 저장 db 저장 프로세싱
+                            double accelAvg = activity.accelSum / activity.accelCnt;
+                            double gyroAvg = activity.gyroSum / activity.gyroCnt;
+                            // accelAvg: 11.044862406399062 gryoAvg: NaN  accelAvg: 14.848149193253327 gryoAvg: NaN
+                            Log.d("myApp", "accelAvg: " + accelAvg + " gryoAvg: " + gyroAvg);
+                            activity.accelCnt = 0;
+                            activity.accelSum = 0;
+                            activity.gyroCnt = 0;
+                            activity.gyroSum = 0;
+
                             activity.finish();
                         }
 //                        else if (!type.equals("gyro") && !type.equals("magnetic")) {
