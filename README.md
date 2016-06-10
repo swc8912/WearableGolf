@@ -2,6 +2,7 @@
 LG전자 웨어러블 빅뱅 해카톤 으랏차차 골프왕팀 출품작(2015/10/31 ~ 2015/11/1)
 
 http://onoffmix.com/event/53466
+
 http://googledevkr.blogspot.kr/2015/12/2015-google-hackfair-2.html
 
 # 개발목적
